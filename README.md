@@ -9,7 +9,9 @@ DB_USERNAME=<postgres>
 DB_PASSWORD=<postgres>
 DB_HOST=<db>
 DB_PORT=<5432>
-WEB3_PROVIDER=<WEBSOCKET_URL>
+CELERY_BROKER=<redis://redis:6379/0>
+CELERY_RESULT_BACKEND=<redis://redis:6379/0>
+WEB3_PROVIDER=<HTTP_URL>
 ```
 и выполните команду
 ```sh
@@ -17,7 +19,7 @@ docker compose up -v --built
 ```
 ### Тестирование
 ```sh
-docker compose web pytest .
+docker compose run web pytest .
 ```
 
 ### Просмотр

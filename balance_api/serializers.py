@@ -21,7 +21,7 @@ class WalletSimpleResponseSerializer(serializers.ModelSerializer):
 
 
 class WalletResponseSerializer(serializers.ModelSerializer):
-    balance = serializers.FloatField(min_value=0)
+    balance = serializers.DecimalField(max_digits=28, decimal_places=18, min_value=0)
 
     class Meta:
         model = Wallet

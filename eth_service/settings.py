@@ -85,7 +85,12 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://0.0.0.0:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get(
+    "CELERY_RESULT_BACKEND", "redis://0.0.0.0:6379/0"
+)
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 

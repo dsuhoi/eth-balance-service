@@ -1,17 +1,14 @@
 import logging
 import os
-import secrets
 
-from eth_account import Account
 from web3 import Web3
 from web3.exceptions import InvalidAddress
-from web3.middleware import construct_sign_and_send_raw_middleware
 
 logger = logging.getLogger(__name__)
 CURRENCY_CONVERT = {"eth": "ether"}
 
 
-web3 = Web3(Web3.WebsocketProvider(os.getenv("WEB3_PROVIDER", "")))
+web3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER", "")))
 
 
 def create_wallet(w3: Web3 = web3) -> dict[str, str]:
@@ -23,7 +20,9 @@ def create_wallet(w3: Web3 = web3) -> dict[str, str]:
     return {"public_key": address, "private_key": private_key}
 
 
-def get_balance(address: str, currency: str, w3: Web3 = web3) -> dict[str, str | None]:
+def get_balance(
+    address: str, currency: str, w3: Web3 = web3
+) -> dict[str, float | str | None]:
     """Getting a balance in the specified currencies"""
     try:
         balance = w3.eth.get_balance(address)

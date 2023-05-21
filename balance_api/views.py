@@ -4,6 +4,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
+from balance_api import tasks
 from balance_api.models import Wallet
 from balance_api.serializers import (WalletRequestSerializer,
                                      WalletResponseSerializer,
@@ -32,15 +33,23 @@ class WalletViewSet(
     )
     def list(self, request):
         logger.info(request)
-        data = [
-            {
-                "id": w.pk,
-                "currency": w.currency,
-                "public_key": w.public_key,
-                "balance": get_balance(w.public_key, w.currency).get("balance"),
-            }
+        task_list = [
+            tasks.get_wallet.delay(
+                {
+                    "id": w.pk,
+                    "currency": w.currency,
+                    "public_key": w.public_key,
+                }
+            )
             for w in Wallet.objects.all()
         ]
+        data = []
+        # Waiting for all tasks to be completed
+        while task_list:
+            for task in task_list:
+                if task.ready():
+                    data.append(task.get())
+                    task_list.remove(task)
         return Response(data=data, status=status.HTTP_200_OK)
 
     @extend_schema(

@@ -9,15 +9,16 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 from unittest import mock
 
 from balance_api.models import Wallet
+from balance_api.tasks import get_wallet
 from balance_api.views import WalletViewSet
 from django.urls import reverse
 
-pytestmark = [pytest.mark.urls("eth_service.urls"), pytest.mark.django_db]
+pytestmark = pytest.mark.django_db
 
 logger = logging.getLogger(__name__)
 
 
-def mocked_get_balance(address: str, currency: str) -> dict[str, float | None]:
+def mocked_get_balance(address: str, currency: str) -> dict[str, float | str | None]:
     return {"balance": 1.0, "error": None}
 
 
@@ -25,12 +26,22 @@ def mocked_create_wallet() -> dict[str, str]:
     return {"private_key": "priv_key_hash", "public_key": "pub_key_hash"}
 
 
-@pytest.mark.django_db
+class MockGetWalletDelay:
+    def __init__(self, wallet: dict[str, int | str]):
+        self.wallet = wallet
+
+    def get(self):
+        return {**self.wallet, "balance": mocked_get_balance("", "")}
+
+    def ready(self):
+        return True
+
+
 class TestWalletViewset:
-    @mock.patch(
-        "balance_api.wallet_operations.get_balance", side_effect=mocked_get_balance
-    )
-    def test_list(self, mocker, rf):
+    @mock.patch("balance_api.tasks.get_wallet")
+    def test_list(self, mock_delay, rf):
+        mock_delay.delay = MockGetWalletDelay
+
         url = reverse("wallets-list")
         request = rf.get(url)
         for i, adr, priv in [
@@ -46,6 +57,7 @@ class TestWalletViewset:
 
         response = view(request).render()
         result = json.loads(response.content)
+        logger.info(result)
 
         assert response.status_code == 200
         assert result[0].get("public_key") == "pub1"
